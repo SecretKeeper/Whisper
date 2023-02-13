@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CassandraModule } from 'src/core/cassandra/cassandra.module';
+import { CassandraModule } from '@core/cassandra/cassandra.module';
 import { MessagesGateway } from './message.gateway';
 import { MessageRepository } from './message.repository';
 import { MessageService } from './message.service';
