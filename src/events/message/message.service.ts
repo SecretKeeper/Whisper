@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Message } from './message.model';
+import { types } from 'cassandra-driver';
+import { CreateMessageDTO } from './dto/create-message.dto';
 import { MessageRepository } from './message.repository';
 
 @Injectable()
@@ -10,15 +11,16 @@ export class MessageService {
     return this.messageRepository.getMessages();
   }
 
-  //   async getEmployeeById(id: number) {
-  //     return this.employeeRepository.getEmployeeById(id);
-  //   }
+  async createMessage(message: CreateMessageDTO) {
+    const newMessage = {
+      ...message,
+      id: types.Uuid.random(),
+      created_at: Date.now(),
+    };
 
-  async createMessage(message: Message) {
-    return this.messageRepository.createMessage(message);
+    // 1. insert to DB
+    await this.messageRepository.createMessage(newMessage);
+
+    // 2. if other user is online send also message to him/her
   }
-
-  //   async updateEmployeeName(id: number, name: string) {
-  //     return this.employeeRepository.updateEmployeeName(id, name);
-  //   }
 }
