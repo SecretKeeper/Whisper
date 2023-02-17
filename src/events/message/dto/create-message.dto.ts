@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsUUID, Length } from 'class-validator';
 
-export class CreateMessage {
+export class CreateMessageDTO {
   @IsNotEmpty()
   local_id: string;
 
@@ -17,7 +17,7 @@ export class CreateMessage {
   receiver: string;
 
   @IsNotEmpty()
-  @Length(4096)
+  @Length(1, 4096)
   content: string;
 
   @IsOptional()
