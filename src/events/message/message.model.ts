@@ -1,13 +1,15 @@
+import { types } from 'cassandra-driver';
+
 export class Message {
   //   local_id: string;
 
-  id: string;
+  id: types.Uuid;
 
-  //   sender: string;
+  sender: string;
 
-  //   receiver: string;
+  receiver: string;
 
-  //   content: string;
+  content: string;
 
-  //   created_at: string;
+  created_at: types.dataTypes.timestamp;
 }
