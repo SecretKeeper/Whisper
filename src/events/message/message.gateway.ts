@@ -1,5 +1,7 @@
 import { BadRequestTransformationFilter } from '@core/filters/ws-bad-request.filter';
-import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { PhantomService } from '@core/phantoms/phantom.service';
+import { Inject, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import {
   MessageBody,
   OnGatewayConnection,
@@ -9,6 +11,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { lastValueFrom } from 'rxjs';
 import { Server } from 'ws';
 import { CreateMessageDTO } from './dto/create-message.dto';
 import { MessageService } from './message.service';
@@ -22,16 +25,35 @@ import { MessageService } from './message.service';
 export class MessagesGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private messageService: MessageService) {}
+  constructor(
+    @Inject('AUTH_MICROSERVICE') private readonly client: ClientProxy,
+    @Inject('NATS') private readonly NATS: ClientProxy,
+    private messageService: MessageService,
+    private phantomService: PhantomService,
+  ) {}
 
   @WebSocketServer() server: Server;
 
   handleDisconnect(client: any) {
-    console.log('handleDisconnect', client);
+    this.phantomService.disconnectPhantom(client.id);
   }
 
-  handleConnection(client: any, ...args: any[]) {
-    console.log('handleConnection', client);
+  async handleConnection(client: any, args: any) {
+    const response = this.client.send(
+      'get-user-by-access-token',
+      args.headers.authorization.substring('Bearer '.length),
+    );
+
+    this.NATS.emit('qq', 'WW23345');
+
+    // if token is valid JWTPayload & User should return
+
+    const user = await lastValueFrom(response);
+
+    // if user token is valid store client with user.id key, else the token is not valid and should drop connection
+    client.id = user.id;
+    if (user.id) this.phantomService.connectPhantom(user.id, client);
+    else client.close();
   }
 
   afterInit(server: Server) {
@@ -40,8 +62,7 @@ export class MessagesGateway
 
   @UsePipes(new ValidationPipe())
   @SubscribeMessage('identity')
-  async identity(@MessageBody() message: CreateMessageDTO): Promise<number> {
+  identity(@MessageBody() message: CreateMessageDTO): void {
     this.messageService.createMessage(message);
-    return 2;
   }
 }
