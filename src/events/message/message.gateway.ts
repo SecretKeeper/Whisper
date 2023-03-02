@@ -3,6 +3,7 @@ import { PhantomService } from '@core/phantoms/phantom.service';
 import { Inject, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -61,8 +62,11 @@ export class MessagesGateway
   }
 
   @UsePipes(new ValidationPipe())
-  @SubscribeMessage('identity')
-  identity(@MessageBody() message: CreateMessageDTO): void {
-    this.messageService.createMessage(message);
+  @SubscribeMessage('create-message')
+  identity(
+    @MessageBody() message: CreateMessageDTO,
+    @ConnectedSocket() client: any,
+  ): void {
+    this.messageService.createMessage(message, client);
   }
 }

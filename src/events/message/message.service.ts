@@ -24,21 +24,32 @@ export class MessageService {
     if (receiver_phantom) receiver_phantom.send(JSON.stringify(message));
   }
 
-  async createMessage(createMessageDto: CreateMessageDTO) {
+  async createMessage(
+    createMessageDto: CreateMessageDTO,
+    sender_phantom_client: any,
+  ) {
     const message = {
       ...createMessageDto,
       id: types.Uuid.random(),
       created_at: Date.now(),
     };
 
-    // 1. insert to DB
-    await this.messageRepository.createMessage(message);
+    try {
+      await this.messageRepository.createMessage(message);
 
-    // 2. if other user is online send also message to him/her
-    // check if receiver phantom is online on current node, send him message or publish over nats to find her
-    const receiver_phantom = this.phantomService.phantoms.get(message.receiver);
+      // if other user is online send also message to him/her
+      // check if receiver phantom is online on current node, send him message or publish over nats to find her
+      const receiver_phantom = this.phantomService.phantoms.get(
+        message.receiver,
+      );
 
-    if (receiver_phantom) receiver_phantom.send(JSON.stringify(message));
-    else this.NATS.emit('send-private-message', message);
+      if (receiver_phantom) receiver_phantom.send(JSON.stringify(message));
+      else this.NATS.emit('send-private-message', message);
+
+      // return back ack message to sender
+      sender_phantom_client.send(JSON.stringify(message));
+    } catch (e) {
+      console.log(e); // should error report with Sentry
+    }
   }
 }
