@@ -11,5 +11,7 @@ export class Message {
 
   content: string;
 
+  seen?: boolean;
+
   created_at: types.dataTypes.timestamp;
 }

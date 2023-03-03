@@ -32,6 +32,7 @@ export class MessageService {
       ...createMessageDto,
       id: types.Uuid.random(),
       created_at: Date.now(),
+      seen: false,
     };
 
     try {
