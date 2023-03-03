@@ -69,4 +69,13 @@ export class MessagesGateway
   ): void {
     this.messageService.createMessage(message, client);
   }
+
+  @UsePipes(new ValidationPipe())
+  @SubscribeMessage('mark-as-read-message')
+  seenMessage(
+    @MessageBody() message_id: String[],
+    @ConnectedSocket() client: any,
+  ): void {
+    this.messageService.markAsReadMessage(message_id);
+  }
 }

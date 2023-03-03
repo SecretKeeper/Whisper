@@ -19,7 +19,9 @@ export class MessageService {
   }
 
   broadcastMessage(message: Message): void {
-    const receiver_phantom = this.phantomService.phantoms.get(message.receiver);
+    const receiver_phantom = this.phantomService.phantoms.get(
+      message.recipient_id,
+    );
 
     if (receiver_phantom) receiver_phantom.send(JSON.stringify(message));
   }
@@ -30,6 +32,7 @@ export class MessageService {
   ) {
     const message = {
       ...createMessageDto,
+      conversation_id: types.Uuid.random(),
       id: types.Uuid.random(),
       created_at: Date.now(),
       seen: false,
@@ -41,7 +44,7 @@ export class MessageService {
       // if other user is online send also message to him/her
       // check if receiver phantom is online on current node, send him message or publish over nats to find her
       const receiver_phantom = this.phantomService.phantoms.get(
-        message.receiver,
+        message.recipient_id,
       );
 
       if (receiver_phantom) receiver_phantom.send(JSON.stringify(message));
@@ -52,5 +55,9 @@ export class MessageService {
     } catch (e) {
       console.log(e); // should error report with Sentry
     }
+  }
+
+  async markAsReadMessage(message_id: String[]) {
+    await this.messageRepository.markAsReedMessage(message_id);
   }
 }

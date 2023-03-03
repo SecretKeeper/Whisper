@@ -31,4 +31,18 @@ export class MessageRepository implements OnModuleInit {
   async createMessage(message: Message) {
     return (await this.messageMapper.insert(message)).toArray();
   }
+
+  async markAsReedMessage(message_ids: String[]) {
+    if (message_ids.length === 1)
+      return (
+        await this.messageMapper.update({ id: message_ids[0], seen: true })
+      ).toArray();
+    else {
+      const modelBatchMapper = this.messageMapper.batching;
+      const changes = message_ids.map((message_id) =>
+        modelBatchMapper.update({ id: message_id, seen: true }),
+      );
+      return await this.cassandraService.mapper.batch(changes);
+    }
+  }
 }
