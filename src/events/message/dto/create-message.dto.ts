@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional, IsUUID, Length } from 'class-validator';
+import { types } from 'cassandra-driver';
 
 export class CreateMessageDTO {
   @IsNotEmpty()
@@ -6,20 +7,21 @@ export class CreateMessageDTO {
 
   @IsOptional()
   @IsUUID()
-  id: string;
+  id: types.Uuid;
+
+  @IsOptional()
+  @IsUUID()
+  conversation_id: types.Uuid;
 
   @IsNotEmpty()
   @IsUUID()
-  sender: string;
+  sender_id: types.Uuid;
 
   @IsNotEmpty()
   @IsUUID()
-  receiver: string;
+  recipient_id: types.Uuid;
 
   @IsNotEmpty()
   @Length(1, 4096)
   content: string;
-
-  @IsOptional()
-  created_at: string;
 }
