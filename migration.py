@@ -26,10 +26,10 @@ session.execute(
 		sender_id uuid,
 		recipient_id uuid,
 		content text,
-		seen_at timestamp,
+		seen boolean,
 		created_at timestamp,
 		updated_at timestamp,
-		PRIMARY KEY ((conversation_id), created_at, seen_at, id)
+		PRIMARY KEY ((conversation_id, seen), created_at, id)
 	)
 	WITH CLUSTERING ORDER BY (created_at DESC)
 	AND compression = {'sstable_compression': 'LZ4Compressor'};
