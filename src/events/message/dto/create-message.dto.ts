@@ -9,7 +9,7 @@ export class CreateMessageDTO {
   @IsUUID()
   id: types.Uuid;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsUUID()
   conversation_id: types.Uuid;
 
