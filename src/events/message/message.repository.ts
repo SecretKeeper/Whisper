@@ -13,7 +13,7 @@ export class MessageRepository implements OnModuleInit {
     const mappingOptions: mapping.MappingOptions = {
       models: {
         Message: {
-          tables: ['messages'],
+          tables: ['private_messages'],
           mappings: new mapping.UnderscoreCqlToCamelCaseMappings(),
         },
       },

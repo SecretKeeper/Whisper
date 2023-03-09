@@ -20,9 +20,9 @@ session.execute(
 
 session.execute(
 	"""
-	CREATE TABLE IF NOT EXISTS messages (
+	CREATE TABLE IF NOT EXISTS private_messages (
+	    conversation_id uuid,
 		id uuid,
-		conversation_id uuid,
 		sender_id uuid,
 		recipient_id uuid,
 		content text,
