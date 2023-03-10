@@ -6,6 +6,8 @@ import { MessageRepository } from './message.repository';
 import { MessageService } from './message.service';
 import { MessageController } from './message.controller';
 import { PhantomService } from '@core/phantoms/phantom.service';
+import { PulsarService } from '@core/pulsar/pulsar.service';
+import { UnseenMessageConsumer } from '@/events/message/consumer/unseen-message.consumer';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { PhantomService } from '@core/phantoms/phantom.service';
     CassandraModule,
   ],
   providers: [
+    PulsarService,
+    UnseenMessageConsumer,
     MessagesGateway,
     MessageService,
     MessageRepository,

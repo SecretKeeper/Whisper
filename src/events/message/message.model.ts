@@ -5,11 +5,17 @@ export class Message {
 
   id: types.Uuid;
 
-  sender: string;
+  conversation_id: types.Uuid;
 
-  receiver: string;
+  sender_id: types.Uuid;
+
+  recipient_id: types.Uuid;
 
   content: string;
 
+  seen?: boolean;
+
   created_at: types.dataTypes.timestamp;
+
+  updated_at?: types.dataTypes.timestamp;
 }

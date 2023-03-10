@@ -1,8 +1,9 @@
-import { BadRequestTransformationFilter } from '@core/filters/ws-bad-request.filter';
-import { PhantomService } from '@core/phantoms/phantom.service';
 import { Inject, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Server } from 'ws';
+import { lastValueFrom } from 'rxjs';
 import {
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -11,8 +12,9 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { lastValueFrom } from 'rxjs';
-import { Server } from 'ws';
+import { BadRequestTransformationFilter } from '@core/filters/ws-bad-request.filter';
+import { PhantomService } from '@core/phantoms/phantom.service';
+import { UnseenMessageConsumer } from '@/events/message/consumer/unseen-message.consumer';
 import { CreateMessageDTO } from './dto/create-message.dto';
 import { MessageService } from './message.service';
 
@@ -27,7 +29,7 @@ export class MessagesGateway
 {
   constructor(
     @Inject('AUTH_MICROSERVICE') private readonly client: ClientProxy,
-    @Inject('NATS') private readonly NATS: ClientProxy,
+    private unseenMessageConsumer: UnseenMessageConsumer,
     private messageService: MessageService,
     private phantomService: PhantomService,
   ) {}
@@ -44,25 +46,38 @@ export class MessagesGateway
       args.headers.authorization.substring('Bearer '.length),
     );
 
-    this.NATS.emit('qq', 'WW23345');
-
     // if token is valid JWTPayload & User should return
+    const phantom = await lastValueFrom(response);
 
-    const user = await lastValueFrom(response);
+    // if user token is valid store client with phantom.id key, else the token is not valid and should drop connection
+    client.id = phantom.id;
 
-    // if user token is valid store client with user.id key, else the token is not valid and should drop connection
-    client.id = user.id;
-    if (user.id) this.phantomService.connectPhantom(user.id, client);
-    else client.close();
+    if (phantom.id) {
+      this.phantomService.connectPhantom(phantom.id, client);
+
+      await this.unseenMessageConsumer.sendUnseenMessagesToRecipient(
+        phantom.id,
+      );
+    } else client.close();
   }
 
-  afterInit(server: Server) {
-    console.log('SERVER IS ', server.clients);
+  afterInit(server: Server) {}
+
+  @UsePipes(new ValidationPipe())
+  @SubscribeMessage('create-message')
+  async identity(
+    @MessageBody() message: CreateMessageDTO,
+    @ConnectedSocket() client: any,
+  ) {
+    await this.messageService.createMessage(message, client);
   }
 
   @UsePipes(new ValidationPipe())
-  @SubscribeMessage('identity')
-  identity(@MessageBody() message: CreateMessageDTO): void {
-    this.messageService.createMessage(message);
+  @SubscribeMessage('mark-as-read-message')
+  async seenMessage(
+    @MessageBody() message_id: String[],
+    @ConnectedSocket() client: any,
+  ) {
+    await this.messageService.markAsReadMessage(message_id);
   }
 }

@@ -8,7 +8,7 @@ export class MessageController {
   constructor(private messageService: MessageService) {}
 
   @MessagePattern('send-private-message')
-  getUserByAccessToken(message: Message): void {
-    this.messageService.broadcastMessage(message);
+  async getUserByAccessToken(message: Message) {
+    await this.messageService.broadcastMessage(message);
   }
 }
