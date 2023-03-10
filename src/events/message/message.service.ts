@@ -5,12 +5,14 @@ import { types } from 'cassandra-driver';
 import { CreateMessageDTO } from './dto/create-message.dto';
 import { Message } from './message.model';
 import { MessageRepository } from './message.repository';
+import { PulsarService } from '@core/pulsar/pulsar.service';
 
 @Injectable()
 export class MessageService {
   constructor(
     private messageRepository: MessageRepository,
     private phantomService: PhantomService,
+    private pulsarService: PulsarService,
     @Inject('NATS') private readonly NATS: ClientProxy,
   ) {}
 
@@ -18,12 +20,20 @@ export class MessageService {
     return this.messageRepository.getMessages();
   }
 
-  broadcastMessage(message: Message): void {
+  async broadcastMessage(message: Message) {
     const receiver_phantom = this.phantomService.phantoms.get(
       message.recipient_id,
     );
 
+    // if other phantom is online send also message to him/her
     if (receiver_phantom) receiver_phantom.send(JSON.stringify(message));
+    // if phantom is offline send message to notification queue
+    else {
+      await this.pulsarService.publishMessage(
+        `private-message-${message.recipient_id}`,
+        JSON.stringify(message),
+      );
+    }
   }
 
   async createMessage(
@@ -41,7 +51,7 @@ export class MessageService {
     try {
       await this.messageRepository.createMessage(message);
 
-      // if other user is online send also message to him/her
+      // if other phantom is online send also message to him/her
       // check if receiver phantom is online on current node, send him message or publish over nats to find her
       const receiver_phantom = this.phantomService.phantoms.get(
         message.recipient_id,
